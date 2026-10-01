@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "terrain-addon",
+  "version": "${version}",
+  "name": "Terrain Generator for Axiom",
+  "description": "A native Axiom terrain-generation brush: layered fractal noise heightmap with a live ghost-block preview and undoable commit. Ported from the WorldEdit terrain addon.",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.terrainaddon.client.TerrainAddonClient"
+    ],
+    "main": [
+      "com.terrainaddon.TerrainAddon"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": ">=26.1",
+    "java": ">=25"
+  },
+  "recommends": {
+    "axiom": ">=5.4.2"
+  }
+}

@@ -1,0 +1,116 @@
+plugins {
+    // 26.x ships an unobfuscated Minecraft jar, so no mappings configuration is used at all.
+    // Only Loom main (built locally as 1.17.local from GitHub HEAD, see README) allows an
+    // empty mappings config for unobfuscated versions.
+    id 'fabric-loom' version '1.17.local'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = 'axiom-terrain-addon'
+}
+
+loom {
+    // 26.x Minecraft jars are unobfuscated (Mojang-official names baked in), so there is
+    // nothing to remap. Obfuscation handling is disabled via the
+    // 'fabric.loom.disableObfuscation=true' property in gradle.properties (set before the DSL
+    // evaluates). Split MC references into main/server vs client source sets:
+    splitEnvironmentSourceSets()
+
+    mods {
+        "terrain-addon" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+repositories {
+    // Axiom is not published to a public Maven repository (closed-source), so it is
+    // resolved from local jars placed in libs/. See libs/README.md for how to obtain them.
+    flatDir {
+        dirs 'libs'
+    }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+
+    // MC 26.x ships an unobfuscated jar (Mojang-official names baked in; Mojang stopped
+    // publishing separate official mappings with 26.1). Loom therefore needs NO mappings
+    // configuration - the jar is used as-is, exactly like the official fabric-example-mod
+    // template for 26.x does.
+    // With obfuscation disabled Loom registers plain configurations only (no mod* helpers),
+    // exactly like the official fabric-example-mod template for 26.x.
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Axiom's 26.1 jar already ships its addon-api 'unobf' (official namespace), so with the
+    // unobfuscated game jar both compile directly against each other - no remapping needed.
+    compileOnly "axiom:axiomclientapi:${project.axiom_clientapi_version}"
+    compileOnly "axiom:axiom:${project.axiom_version}"
+
+    // For running the dev client with Axiom actually loaded.
+    runtimeOnly "axiom:axiom:${project.axiom_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "loader_version", project.loader_version
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version,
+                "minecraft_version": project.minecraft_version,
+                "loader_version": project.loader_version
+    }
+}
+
+// MC 26.x targets Java 25 (matches the official fabric-example-mod template for 26.x).
+def targetJavaVersion = 25
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release.set(targetJavaVersion)
+    }
+}
+
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
+
+// The built addon must be named exactly "axiom-terrain-addon-26.1.jar". With obfuscation
+// disabled there is no remapJar task - the plain jar task is the final artifact.
+tasks.named("jar") {
+    archiveFileName = "axiom-terrain-addon-26.1.jar"
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        create("mavenJava", MavenPublication) {
+            artifactId = project.archives_base_name
+            from components.java
+        }
+    }
+
+    repositories {
+        // Add repositories to publish to here.
+    }
+}

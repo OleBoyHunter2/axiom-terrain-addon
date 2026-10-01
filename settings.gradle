@@ -1,0 +1,12 @@
+pluginManagement {
+    repositories {
+        // Locally-published Loom main (1.17.local) - the only release with unobfuscated
+        // Minecraft support for 26.x. See README for how it is produced.
+        mavenLocal()
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        gradlePluginPortal()
+    }
+}
